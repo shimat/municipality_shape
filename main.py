@@ -1,48 +1,58 @@
 import streamlit as st
 from data_loader import get_geojson
-from image_processing import get_contours_from_geojson, draw_hull_image
+from image_processing import Data, compute_score, get_contours_from_geojson, draw_hull_image
+from const import MUNICIPALITY_TABLE
 
-MUNICIPALITY_TABLE = {
-"函館市": "https://geoshape.ex.nii.ac.jp/city/geojson/latest/01202.geojson",
-"小樽市": "https://geoshape.ex.nii.ac.jp/city/geojson/latest/01203.geojson",
-"旭川市": "https://geoshape.ex.nii.ac.jp/city/geojson/latest/01204.geojson",
-"室蘭市": "https://geoshape.ex.nii.ac.jp/city/geojson/latest/01205.geojson",
-"釧路市": "https://geoshape.ex.nii.ac.jp/city/geojson/latest/01206.geojson",
-"帯広市": "https://geoshape.ex.nii.ac.jp/city/geojson/latest/01207.geojson",
-"北見市": "https://geoshape.ex.nii.ac.jp/city/geojson/latest/01208.geojson",
-"夕張市": "https://geoshape.ex.nii.ac.jp/city/geojson/latest/01209.geojson",
-"幕別町": "https://geoshape.ex.nii.ac.jp/city/geojson/latest/01643.geojson",
-}
-"""
-     "札幌市": "https://geoshape.ex.nii.ac.jp/city/topojson/latest/01100.topojson",
-     "函館市": "https://geoshape.ex.nii.ac.jp/city/topojson/latest/01202.topojson",
-     "小樽市": "https://geoshape.ex.nii.ac.jp/city/topojson/latest/01203.topojson",
-     "旭川市": "https://geoshape.ex.nii.ac.jp/city/topojson/latest/01204.topojson",
-     "室蘭市": "https://geoshape.ex.nii.ac.jp/city/topojson/latest/01205.topojson",
-     "釧路市": "https://geoshape.ex.nii.ac.jp/city/topojson/latest/01206.topojson",
-     "帯広市": "https://geoshape.ex.nii.ac.jp/city/topojson/latest/01207.topojson",
-     "北見市": "https://geoshape.ex.nii.ac.jp/city/topojson/latest/01208.topojson",
-     "夕張市": "https://geoshape.ex.nii.ac.jp/city/topojson/latest/01209.topojson",
-     "幕別町": "https://geoshape.ex.nii.ac.jp/city/topojson/latest/01643.topojson",
 
-"""
+st.set_page_config(page_title="いびつな市町村ランキング", layout="wide")
 
-st.title("Convexity Defects")
+st.title("いびつな市町村ランキング")
 
-municipality = st.selectbox('市区町村を選択', MUNICIPALITY_TABLE.keys())
+prefecture = st.selectbox('都道府県を選択', ("北海道", "青森県", "岩手県"))
 
-geojson = get_geojson(MUNICIPALITY_TABLE[municipality])
-contours = get_contours_from_geojson(geojson)
-#arcs = get_arcs_from_topojson(geojson)
-img_hull = draw_hull_image(contours)
-st.image(img_hull, caption=f"{municipality}のConvexity Defects")
+url_table = {name: url for name, url in MUNICIPALITY_TABLE.items() if prefecture in name}
+
+cols = st.columns(3)
+cols[0].header("市区町村名")
+cols[1].header("形状")
+cols[2].header("スコア")
+
+
+@st.cache(persist=True)
+def get_data(name: str, url: str) -> Data:
+    geojson = get_geojson(url)
+    contours = list(get_contours_from_geojson(geojson)) 
+    return compute_score(name, contours)
+
+
+# ベストNを探す
+data = sorted(
+     (get_data(name, url) for name, url in url_table.items()), 
+     key=lambda x: x.score, 
+     reverse=True
+)
+top_n = data[:10]
+bottom_n = data[-10:][::-1]
+
+
+tabs = st.tabs(("いびつな形ベスト10", "きれいな形ベスト10"))
+for i, d in enumerate((top_n, bottom_n)):
+     for name, score, img_contours, defects, largest_contour in d:
+          img_hull = draw_hull_image(defects, largest_contour, img_contours)
+          cols = tabs[i].columns(3)
+          cols[0].markdown(f"<p style='font-size: x-large;'>{name}</p>", unsafe_allow_html=True)
+          cols[1].image(img_hull)
+          cols[2].markdown(f"<p style='font-size: x-large;'>{score}</p>", unsafe_allow_html=True)
 
 
 st.markdown("""
 -----
+<style>
+div.small-font li{ font-size: small; }
+</style>
 <p>GitHub: <a href="https://github.com/shimat/municipality_shape">https://github.com/shimat/municipality_shape</a></p>
 <p>出典</p>
-<div class="xx-small-font">
+<div class="small-font">
 <ul>
 <li>『国土数値情報「⾏政区域データ」 (N03)』（国土交通省）（<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N03-v2_4.html">https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N03-v2_4.html</a>）を加工して作成</li>
 <li>『歴史的行政区域データセットβ版 (<a href="https://geoshape.ex.nii.ac.jp/city/">https://geoshape.ex.nii.ac.jp/city/</a>)』（CODH作成）を加工して作成</li>
