@@ -37,10 +37,10 @@ bottom_n = data[-10:][::-1]
 
 tabs = st.tabs(("いびつな形ベスト10", "きれいな形ベスト10"))
 for i, d in enumerate((top_n, bottom_n)):
-     for name, score, img_contours, defects, largest_contour in d:
+     for rank, (name, score, img_contours, defects, largest_contour) in enumerate(d):
           img_hull = draw_hull_image(defects, largest_contour, img_contours)
           cols = tabs[i].columns(3)
-          cols[0].markdown(f"<p style='font-size: x-large;'>{name}</p>", unsafe_allow_html=True)
+          cols[0].markdown(f"<p style='font-size: x-large;'>{rank+1}: {name}</p>", unsafe_allow_html=True)
           cols[1].image(img_hull)
           cols[2].markdown(f"<p style='font-size: x-large;'>{score}</p>", unsafe_allow_html=True)
 
