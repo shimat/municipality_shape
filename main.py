@@ -1,8 +1,9 @@
+import gc
 import streamlit as st
 from data_loader import get_geojson
 from image_processing import Data, compute_score, get_contours_from_geojson, draw_hull_image
 from const import MUNICIPALITY_TABLE, PREFECTURES
-
+from sortedcontainers import SortedList
 
 st.set_page_config(page_title="いびつな市町村ランキング", layout="wide")
 
@@ -23,18 +24,18 @@ def get_data(name: str, url: str) -> Data:
 
 
 # ベストNを探す
-data = sorted(
-     (get_data(name, url) for name, url in url_table.items()),
-     key=lambda x: x.score, 
-     reverse=True
-)
-top_n = data[:10]
-bottom_n = data[-10:][::-1]
+MAX_COUNT = 10
+top_n = SortedList(key=lambda x: -x.score)
+for name, url in url_table.items():
+    d = get_data(name, url)
+    top_n.add(d)
+    if len(top_n) > MAX_COUNT:
+        top_n.pop()
 
+#tabs = st.tabs(("いびつな形ベスト10", "きれいな形ベスト10 (微妙)"))
+tabs = st.tabs(("いびつな形ベスト10", ))
 
-tabs = st.tabs(("いびつな形ベスト10", "きれいな形ベスト10 (微妙)"))
-
-for i, d in enumerate((top_n, bottom_n)):
+for i, d in enumerate((top_n, )):
     header_cols = tabs[i].columns(3)
     header_cols[0].header("市区町村名")
     header_cols[1].header("形状")
@@ -46,6 +47,7 @@ for i, d in enumerate((top_n, bottom_n)):
         cols[1].image(img_hull)
         cols[2].markdown(f"<p style='font-size: x-large;'>{score}</p>", unsafe_allow_html=True)
 
+gc.collect()
 
 st.markdown("""
 -----

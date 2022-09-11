@@ -59,7 +59,7 @@ def normalize_minmax(
     return result.astype(dtype)
 
 
-@st.cache(persist=True)
+#@st.cache(persist=True)
 def get_contours_from_geojson(
         geojson: dict[str, Any], size: int = DEFAULT_IMAGE_SIZE
 ) -> list[npt.NDArray[np.int32]]:
@@ -91,7 +91,7 @@ def get_contours_from_geojson(
 #    return contours_points, img_contours
 
 
-@st.cache(persist=True)
+#@st.cache(persist=True)
 def get_defects_hull(
         contours: list[npt.NDArray[np.int32]]
 ) -> tuple[npt.NDArray[np.int32], npt.NDArray[np.int32], npt.NDArray[npt.NDArray[npt.NDArray[np.int32]]]]:
@@ -107,7 +107,7 @@ def get_defects_hull(
     return largest_contour, hull, defects
 
 
-@st.cache(persist=True)
+#@st.cache(persist=True)
 def draw_hull_image(
         contours: list[npt.NDArray[np.int32]],
         largest_contour: npt.NDArray[np.int32],
