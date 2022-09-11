@@ -13,7 +13,7 @@ geojson = get_geojson(MUNICIPALITY_TABLE[municipality])
 contours = get_contours_from_geojson(geojson)
 
 data = compute_score(municipality, contours)
-img_hull = draw_hull_image(data.defects, data.largest_contour, data.img_contours)
+_, img_hull = draw_hull_image(contours, data.largest_contour, data.defects)
 st.image(img_hull, caption=f"{municipality}のConvexity Defects (Score: {data.score})")
 
 
