@@ -1903,3 +1903,6 @@ MUNICIPALITY_TABLE = {
     "沖縄県 与那国町": "https://geoshape.ex.nii.ac.jp/city/geojson/latest/47382.geojson",
 }
 
+PREFECTURES = tuple(
+    dict.fromkeys(
+        name.split(" ")[0] for name in MUNICIPALITY_TABLE.keys()))
