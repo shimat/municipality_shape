@@ -15,8 +15,9 @@ def get_geojson(url: str) -> dict[str, Any]:
         with open(cache_path, encoding="UTF-8-sig") as f:
             return json.load(f)
     else:
-        sleep(1)
-        return get_geojson_core(url)
+        raise f"Not found '{cache_path}'"
+        # sleep(1)
+        # return get_geojson_core(url)
 
 
 @st.cache(persist=True)
