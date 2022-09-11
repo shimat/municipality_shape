@@ -8,7 +8,7 @@ st.set_page_config(page_title="いびつな市町村ランキング", layout="wi
 
 st.title("いびつな市町村ランキング")
 
-prefecture = st.selectbox("都道府県を選択", ("全国",) + PREFECTURES)
+prefecture = st.selectbox("都道府県を選択", PREFECTURES)
 
 url_table = MUNICIPALITY_TABLE
 if prefecture != "全国":
