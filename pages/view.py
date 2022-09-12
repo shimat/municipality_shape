@@ -7,10 +7,11 @@ from image_processing import compute_score, draw_hull_image, get_contours_from_g
 st.set_page_config(page_title="Convexity Defects")
 st.title("各市町村の形状")
 
-municipality = st.selectbox('市区町村を選択', MUNICIPALITY_TABLE.keys())
+municipality: str = st.selectbox('市区町村を選択', MUNICIPALITY_TABLE.keys())
 
 geojson = get_geojson(MUNICIPALITY_TABLE[municipality])
-contours = get_contours_from_geojson(geojson)
+pref, city, *_ = municipality.split(" ")
+contours = get_contours_from_geojson(geojson, pref, city)
 
 data = compute_score(municipality, contours)
 _, img_hull = draw_hull_image(contours, data.largest_contour, data.defects)

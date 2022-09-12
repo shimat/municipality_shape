@@ -9,7 +9,7 @@ st.set_page_config(page_title="いびつな市町村ランキング", layout="wi
 
 st.title("いびつな市町村ランキング")
 
-prefecture = st.selectbox("都道府県を選択", PREFECTURES)
+prefecture: str = st.selectbox("都道府県を選択", PREFECTURES)
 
 url_table = MUNICIPALITY_TABLE
 if prefecture != "全国":
@@ -19,7 +19,8 @@ if prefecture != "全国":
 @st.cache(persist=True)
 def get_data(name: str, url: str) -> Data:
     geojson = get_geojson(url)
-    all_contours = list(get_contours_from_geojson(geojson))
+    pref, city, *_ = name.split(" ")
+    all_contours = list(get_contours_from_geojson(geojson, pref, city))
     return compute_score(name, all_contours)
 
 

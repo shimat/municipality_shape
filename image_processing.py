@@ -1,29 +1,28 @@
 from itertools import chain
-from typing import Any, Iterable, NamedTuple, Final
+from typing import Any, NamedTuple, Final
 
 import numpy as np
 import numpy.typing as npt
 import cv2
 import streamlit as st
-from pyproj import Transformer
+#from pyproj import Transformer
+from transformer import get_transformer
 
 DEFAULT_IMAGE_SIZE: Final[int] = 500
 
-transformer = Transformer.from_proj(4326, 6680)
-
 
 class Data(NamedTuple):
-     name: str
-     score: float
-     #img_contours: npt.NDArray
-     contours: list[npt.NDArray[np.int32]]
-     largest_contour: npt.NDArray[np.int32]
-     defects: npt.NDArray[npt.NDArray[npt.NDArray[np.int32]]]
+    name: str
+    score: float
+    # img_contours: npt.NDArray
+    contours: list[npt.NDArray[np.int32]]
+    largest_contour: npt.NDArray[np.int32]
+    defects: npt.NDArray[npt.NDArray[npt.NDArray[np.int32]]]
 
 
 @st.cache(persist=True)
 def compute_score(name: str, contours: list[npt.NDArray[np.int32]]) -> Data:
-    #contours_points, img_contours = get_contours_points(contours)
+    # contours_points, img_contours = get_contours_points(contours)
     largest_contour, hull, defects = get_defects_hull(contours)
 
     distances = (defects[i, 0] for i in range(defects.shape[0]))
@@ -32,7 +31,7 @@ def compute_score(name: str, contours: list[npt.NDArray[np.int32]]) -> Data:
     return Data(name, score, contours, largest_contour, defects)
 
 
-def get_minmax(contours: list[list[list[float]]]) -> tuple[float, float, float, float]:
+def get_minmax(contours: list[list[tuple[float]]]) -> tuple[float, float, float, float]:
     flat = list(chain.from_iterable(contours))
     array = np.array(flat)
     x, y = array.T
@@ -59,13 +58,16 @@ def normalize_minmax(
     return result.astype(dtype)
 
 
-#@st.cache(persist=True)
+# @st.cache(persist=True)
 def get_contours_from_geojson(
-        geojson: dict[str, Any], size: int = DEFAULT_IMAGE_SIZE
+        geojson: dict[str, Any],
+        prefecture: str, city: str,
+        size: int = DEFAULT_IMAGE_SIZE
 ) -> list[npt.NDArray[np.int32]]:
     all_coordinates = geojson["features"][0]["geometry"]["coordinates"]
     contours: list[list[list[float]]] = list(chain.from_iterable(all_coordinates))
 
+    transformer = get_transformer(prefecture, city)
     cartesian_contours = [
         [transformer.transform(c[1], c[0])[::-1] for c in contour if 120 < c[0] < 150 and 20 < c[1] < 50]  # 緯度経度0の異常データがたまに紛れている
         for contour in contours]
@@ -81,17 +83,17 @@ def get_contours_from_geojson(
     return result
 
 
-#@st.cache(persist=True)
-#def get_contours_points(
-#        contours: Iterable[npt.NDArray], size: int = DEFAULT_IMAGE_SIZE
-#) -> tuple[Any, npt.NDArray]:
-#    img_contours = np.zeros((size, size, 1), np.uint8)
-#    cv2.polylines(img_contours, list(contours), isClosed=True, color=(255, 255, 255), thickness=2)
-#    contours_points, _ = cv2.findContours(img_contours, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-#    return contours_points, img_contours
+# @st.cache(persist=True)
+# def get_contours_points(
+#         contours: Iterable[npt.NDArray], size: int = DEFAULT_IMAGE_SIZE
+# ) -> tuple[Any, npt.NDArray]:
+#     img_contours = np.zeros((size, size, 1), np.uint8)
+#     cv2.polylines(img_contours, list(contours), isClosed=True, color=(255, 255, 255), thickness=2)
+#     contours_points, _ = cv2.findContours(img_contours, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+#     return contours_points, img_contours
 
 
-#@st.cache(persist=True)
+# @st.cache(persist=True)
 def get_defects_hull(
         contours: list[npt.NDArray[np.int32]]
 ) -> tuple[npt.NDArray[np.int32], npt.NDArray[np.int32], npt.NDArray[npt.NDArray[npt.NDArray[np.int32]]]]:
@@ -107,7 +109,7 @@ def get_defects_hull(
     return largest_contour, hull, defects
 
 
-#@st.cache(persist=True)
+# @st.cache(persist=True)
 def draw_hull_image(
         contours: list[npt.NDArray[np.int32]],
         largest_contour: npt.NDArray[np.int32],
