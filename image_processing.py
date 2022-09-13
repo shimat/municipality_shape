@@ -117,7 +117,7 @@ def draw_hull_image(
         size: int = DEFAULT_IMAGE_SIZE
 ) -> tuple[npt.NDArray, npt.NDArray]:
     img_contours = np.zeros((size, size, 1), np.uint8)
-    cv2.polylines(img_contours, list(contours), isClosed=True, color=(255, 255, 255), thickness=2)
+    cv2.polylines(img_contours, contours, isClosed=True, color=(255, 255, 255), thickness=2)
 
     img_hull = cv2.cvtColor(img_contours, cv2.COLOR_GRAY2BGR)
 
